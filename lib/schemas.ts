@@ -40,12 +40,3 @@ export const AuditDigest = z.object({
     .max(10),
 });
 export type AuditDigest = z.infer<typeof AuditDigest>;
-
-export const Recommendation = z.object({
-  title: z.string(),
-  impact: z.enum(["high", "medium", "low"]),
-  estimatedSavingsMs: z.number(),
-  why: z.string(),
-  howToFix: z.string(),
-  relatedAuditId: z.string(),
-});
