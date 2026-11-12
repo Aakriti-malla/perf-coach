@@ -1,3 +1,5 @@
+import { GaugeIcon, InfoIcon, PersonCircleIcon, SearchIcon, ShieldCheckIcon } from "@/components/icons";
+import { ScoreRing, scoreBand } from "@/components/ScoreRing";
 import type { AuditDigest } from "@/lib/schemas";
 
 // [good upper bound, poor lower bound] from web.dev/vitals and Lighthouse scoring
@@ -12,11 +14,20 @@ const THRESHOLDS = {
 
 type Key = keyof typeof THRESHOLDS;
 
+const ABBREVIATIONS: Record<Key, string> = {
+  lcpMs: "LCP",
+  cls: "CLS",
+  inpMs: "INP",
+  fcpMs: "FCP",
+  tbtMs: "TBT",
+  speedIndexMs: "SI",
+};
+
 const RATINGS = {
-  good: { label: "Good", style: "border-green-300 bg-green-50 text-green-800" },
-  needs: { label: "Needs improvement", style: "border-amber-300 bg-amber-50 text-amber-800" },
-  poor: { label: "Poor", style: "border-red-300 bg-red-50 text-red-800" },
-  none: { label: "No data", style: "border-zinc-300 bg-zinc-50 text-zinc-700" },
+  good: { label: "Good", border: "border-l-moss", dot: "bg-moss" },
+  needs: { label: "Needs improvement", border: "border-l-clay", dot: "bg-clay" },
+  poor: { label: "Poor", border: "border-l-brick", dot: "bg-brick" },
+  none: { label: "No data", border: "border-l-bark-soft", dot: "bg-bark-soft" },
 };
 
 function rate(key: Key, value: number | null) {
@@ -32,18 +43,47 @@ function format(key: Key, value: number | null): string {
   return `${(value / 1000).toFixed(1)} s`;
 }
 
-function Tiles({ title, items }: { title: string; items: [string, Key, number | null][] }) {
+// Each rating band gets a third of the scale, however wide it is numerically; values past "poor" are clamped.
+function markerPercent(key: Key, value: number): number {
+  const [good, poor] = THRESHOLDS[key];
+  const thirds =
+    value <= good ? value / good : value <= poor ? 1 + (value - good) / (poor - good) : 2 + Math.min(1, (value - poor) / poor);
+  return Math.min(1, Math.max(0, thirds / 3)) * 100;
+}
+
+function Tiles({ title, caption, items }: { title: string; caption: string; items: [string, Key, number | null][] }) {
   return (
-    <section className="mt-6">
-      <h2 className="mb-2 text-lg font-semibold">{title}</h2>
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {items.map(([label, key, value]) => {
+    <section className="mt-8">
+      <h2 className="text-xl">{title}</h2>
+      <p className="mb-3 text-sm">{caption}</p>
+      <dl className="grid grid-cols-1 gap-3 md:grid-cols-6">
+        {items.map(([label, key, value], i) => {
           const r = rate(key, value);
+          // 5 tiles fill a 6-column grid as 2+2+2 then 3+3; 4 tiles make two rows of 3+3.
+          const span = items.length === 5 && i < 3 ? "md:col-span-2" : "md:col-span-3";
           return (
-            <div key={key} className={`rounded border p-3 ${r.style}`}>
-              <dt className="text-sm">{label}</dt>
-              <dd className="text-2xl font-semibold">{format(key, value)}</dd>
-              <dd className="text-sm">{r.label}</dd>
+            <div key={key} className={`rounded-2xl border-l-4 bg-oat p-3 text-bark ${r.border} ${span}`}>
+              <dt className="flex flex-wrap items-center gap-2 text-sm">
+                {label}
+                <span className="rounded-full bg-linen px-2 py-0.5 text-xs font-medium">{ABBREVIATIONS[key]}</span>
+              </dt>
+              <dd className="text-2xl font-semibold tabular-nums">{format(key, value)}</dd>
+              {value !== null && (
+                <dd aria-hidden="true" className="relative my-2 flex h-1.5 gap-0.5">
+                  <span className="h-full flex-1 rounded-l-full bg-moss" />
+                  <span className="h-full flex-1 bg-clay" />
+                  <span className="h-full flex-1 rounded-r-full bg-brick" />
+                  <span
+                    className="absolute top-1/2 h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-bark ring-1 ring-oat"
+                    style={{ left: `${markerPercent(key, value)}%` }}
+                  />
+                </dd>
+              )}
+              <dd className="flex items-center gap-2 text-sm">
+                <span aria-hidden="true" className={`size-2 shrink-0 rounded-full ${r.dot}`} />
+                {r.label}
+              </dd>
+              <dd className="mt-1 text-xs tabular-nums">Good ≤ {format(key, THRESHOLDS[key][0])}</dd>
             </div>
           );
         })}
@@ -54,6 +94,12 @@ function Tiles({ title, items }: { title: string; items: [string, Key, number | 
 
 export function VitalsGrid({ digest }: { digest: AuditDigest }) {
   const { lab, field, scores } = digest;
+  const categories: [string, (props: { size?: number }) => React.JSX.Element, number | null][] = [
+    ["Performance", GaugeIcon, scores.performance],
+    ["Accessibility", PersonCircleIcon, scores.accessibility],
+    ["Best practices", ShieldCheckIcon, scores.bestPractices],
+    ["SEO", SearchIcon, scores.seo],
+  ];
   return (
     <div className="mt-8">
       <p className="break-all">
@@ -62,21 +108,23 @@ export function VitalsGrid({ digest }: { digest: AuditDigest }) {
           {new Date(digest.fetchedAt).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" })} (UTC)
         </time>
       </p>
-      <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1">
-        {Object.entries({
-          Performance: scores.performance,
-          Accessibility: scores.accessibility,
-          "Best practices": scores.bestPractices,
-          SEO: scores.seo,
-        }).map(([label, score]) => (
-          <div key={label} className="flex gap-2">
-            <dt>{label}</dt>
-            <dd className="font-semibold">{score ?? "–"}</dd>
+      <dl className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+        {categories.map(([label, Icon, score]) => (
+          <div key={label} className="flex flex-col items-center gap-2 rounded-2xl bg-oat p-4 text-center text-bark">
+            <dt className="flex items-center gap-2 text-sm">
+              <Icon />
+              {label}
+            </dt>
+            <dd className="order-first">
+              <ScoreRing score={score} />
+            </dd>
+            <dd className="text-sm">{scoreBand(score).label}</dd>
           </div>
         ))}
       </dl>
       <Tiles
         title="Lab data (Lighthouse)"
+        caption="A single simulated Lighthouse run."
         items={[
           ["Largest Contentful Paint", "lcpMs", lab.lcpMs],
           ["Cumulative Layout Shift", "cls", lab.cls],
@@ -88,6 +136,7 @@ export function VitalsGrid({ digest }: { digest: AuditDigest }) {
       {field ? (
         <Tiles
           title="Field data (real users, CrUX)"
+          caption="Real Chrome users."
           items={[
             ["Largest Contentful Paint", "lcpMs", field.lcpMs],
             ["Interaction to Next Paint", "inpMs", field.inpMs],
@@ -96,7 +145,10 @@ export function VitalsGrid({ digest }: { digest: AuditDigest }) {
           ]}
         />
       ) : (
-        <p className="mt-6">No field data is available for this URL; it doesn&apos;t have enough real-user traffic.</p>
+        <p className="mt-6 flex items-start gap-2 rounded-xl border-l-4 border-clay bg-oat p-3 text-bark">
+          <InfoIcon />
+          No field data is available for this URL; it doesn&apos;t have enough real-user traffic.
+        </p>
       )}
     </div>
   );

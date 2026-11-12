@@ -30,10 +30,14 @@ export async function getReport(id: string): Promise<AuditDigest | null> {
   }
 }
 
-export async function setReport(id: string, digest: AuditDigest): Promise<void> {
+// Returns false on failure: the audit result lives at /report/[id], so an unsaved report is a failed audit.
+export async function setReport(id: string, digest: AuditDigest): Promise<boolean> {
   try {
     await redis.set(`report:${id}`, digest, { ex: SEVEN_DAYS });
-  } catch {}
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // Rate limiter fails closed: without it anyone could burn the PSI quota.
