@@ -1,41 +1,61 @@
 "use client";
 
 import { useState } from "react";
+import { FixList } from "@/components/FixList";
+import { UrlForm } from "@/components/UrlForm";
+import { VitalsGrid } from "@/components/VitalsGrid";
+import type { Strategy } from "@/lib/psi";
+import type { AuditDigest } from "@/lib/schemas";
 
 export default function Home() {
-  const [result, setResult] = useState("");
+  const [digest, setDigest] = useState<AuditDigest | null>(null);
+  const [reportId, setReportId] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
+  async function runAudit(url: string, strategy: Strategy) {
     setLoading(true);
-    setResult("");
-    const res = await fetch("/api/audit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: form.get("url"), strategy: form.get("strategy") }),
-    });
-    setResult(JSON.stringify(await res.json(), null, 2));
-    setLoading(false);
+    setError("");
+    setDigest(null);
+    try {
+      const res = await fetch("/api/audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, strategy }),
+      });
+      // Platform timeouts and gateway errors come back as HTML, not our JSON.
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.digest) {
+        setDigest(data.digest);
+        setReportId(data.id);
+      } else if (data?.error) {
+        setError(data.error);
+      } else if (res.status === 429) {
+        setError("Too many requests. Please wait a bit and try again.");
+      } else {
+        setError("The audit timed out or failed. Please try again.");
+      }
+    } catch {
+      setError("Couldn't reach the server. Check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <main className="mx-auto max-w-xl p-6">
+    <main className="mx-auto w-full max-w-3xl p-6">
       <h1 className="mb-4 text-2xl font-semibold">PerfCoach</h1>
-      <form onSubmit={onSubmit} className="flex flex-col gap-3">
-        <label htmlFor="url">Website URL</label>
-        <input id="url" name="url" required className="rounded border border-zinc-500 p-2" />
-        <label htmlFor="strategy">Device</label>
-        <select id="strategy" name="strategy" className="rounded border border-zinc-500 p-2">
-          <option value="mobile">Mobile</option>
-          <option value="desktop">Desktop</option>
-        </select>
-        <button disabled={loading} className="rounded bg-blue-700 p-2 text-white disabled:opacity-60">
-          {loading ? "Auditing… this can take up to a minute" : "Run audit"}
-        </button>
-      </form>
-      <pre aria-live="polite" className="mt-4 overflow-auto text-sm">{result}</pre>
+      <UrlForm onSubmit={runAudit} loading={loading} />
+      <div role="status" className="mt-4">
+        {loading && "Auditing… this can take up to a minute"}
+      </div>
+      {error && (
+        <p role="alert" className="mt-4 rounded border border-red-300 bg-red-50 p-3 text-red-800">
+          {error}
+        </p>
+      )}
+      {digest && <VitalsGrid digest={digest} />}
+      {digest && <FixList key={reportId} digest={digest} id={reportId} />}
     </main>
   );
 }

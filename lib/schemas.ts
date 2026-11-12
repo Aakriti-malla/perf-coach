@@ -49,3 +49,20 @@ export const Recommendation = z.object({
   howToFix: z.string(),
   relatedAuditId: z.string(),
 });
+export type Recommendation = z.infer<typeof Recommendation>;
+
+// useObject needs an object at the top level, not a bare array.
+export const Recommendations = z.object({ recommendations: z.array(Recommendation).max(8) });
+export type Recommendations = z.infer<typeof Recommendations>;
+
+// The model's ids and numbers are untrusted: the digest is the source of truth.
+export function cleanRecommendations(recs: Recommendation[], digest: AuditDigest): Recommendation[] {
+  const savings = new Map(digest.failingAudits.map((a) => [a.id, a.overallSavingsMs]));
+  return recs
+    .filter((r) => savings.has(r.relatedAuditId))
+    .map((r) => {
+      const ms = savings.get(r.relatedAuditId) ?? 0;
+      return { ...r, estimatedSavingsMs: ms, impact: ms === 0 && r.impact === "high" ? "medium" : r.impact };
+    })
+    .sort((a, b) => b.estimatedSavingsMs - a.estimatedSavingsMs);
+}
