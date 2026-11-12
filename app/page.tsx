@@ -1,22 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { FixList } from "@/components/FixList";
+import { useRouter } from "next/navigation";
 import { UrlForm } from "@/components/UrlForm";
-import { VitalsGrid } from "@/components/VitalsGrid";
 import type { Strategy } from "@/lib/psi";
-import type { AuditDigest } from "@/lib/schemas";
 
 export default function Home() {
-  const [digest, setDigest] = useState<AuditDigest | null>(null);
-  const [reportId, setReportId] = useState("");
+  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function runAudit(url: string, strategy: Strategy) {
     setLoading(true);
     setError("");
-    setDigest(null);
     try {
       const res = await fetch("/api/audit", {
         method: "POST",
@@ -25,10 +21,12 @@ export default function Home() {
       });
       // Platform timeouts and gateway errors come back as HTML, not our JSON.
       const data = await res.json().catch(() => null);
-      if (res.ok && data?.digest) {
-        setDigest(data.digest);
-        setReportId(data.id);
-      } else if (data?.error) {
+      if (res.ok && data?.id) {
+        // Stay in the loading state until the navigation completes.
+        router.push(`/report/${data.id}`);
+        return;
+      }
+      if (data?.error) {
         setError(data.error);
       } else if (res.status === 429) {
         setError("Too many requests. Please wait a bit and try again.");
@@ -37,9 +35,8 @@ export default function Home() {
       }
     } catch {
       setError("Couldn't reach the server. Check your connection and try again.");
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }
 
   return (
@@ -54,8 +51,6 @@ export default function Home() {
           {error}
         </p>
       )}
-      {digest && <VitalsGrid digest={digest} />}
-      {digest && <FixList key={reportId} digest={digest} id={reportId} />}
     </main>
   );
 }

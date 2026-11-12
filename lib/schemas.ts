@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const ReportId = z.string().regex(/^[a-f0-9]{32}$/);
+
 const nullableNumber = z.number().nullable();
 
 export const AuditDigest = z.object({

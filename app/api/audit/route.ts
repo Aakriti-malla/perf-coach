@@ -36,7 +36,9 @@ export async function POST(request: Request) {
 
   try {
     const digest = normalize(await fetchPsi(guard.url.href, body.data.strategy));
-    await setReport(id, digest);
+    if (!(await setReport(id, digest))) {
+      return Response.json({ error: "Couldn't save the report. Please try again." }, { status: 503 });
+    }
     return Response.json({ id, digest });
   } catch (e) {
     const message = e instanceof PsiError ? e.message : "Something went wrong running the audit.";

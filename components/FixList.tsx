@@ -21,11 +21,12 @@ function errorMessage(error: Error): string {
   }
 }
 
-export function FixList({ digest, id }: { digest: AuditDigest; id: string }) {
+export function FixList({ digest, id, initial }: { digest: AuditDigest; id: string; initial?: Recommendations }) {
   const [emptyFinish, setEmptyFinish] = useState(false);
   const { object, submit, isLoading, error } = useObject({
     api: "/api/analyze",
     schema: Recommendations,
+    initialValue: initial,
     onFinish: ({ object }) => setEmptyFinish(!object?.recommendations.length),
   });
 
