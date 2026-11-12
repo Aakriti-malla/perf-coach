@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
   // Only real PSI calls count against the limit; cache hits are free.
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
-  const limit = await checkRateLimit(ip);
+  const limit = await checkRateLimit("audit", ip);
   if (limit === "limited") {
     return Response.json({ error: "You've used your 5 audits for this hour. Try again later." }, { status: 429 });
   }

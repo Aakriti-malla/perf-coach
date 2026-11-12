@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { FixList } from "@/components/FixList";
 import { UrlForm } from "@/components/UrlForm";
 import { VitalsGrid } from "@/components/VitalsGrid";
 import type { Strategy } from "@/lib/psi";
@@ -8,6 +9,7 @@ import type { AuditDigest } from "@/lib/schemas";
 
 export default function Home() {
   const [digest, setDigest] = useState<AuditDigest | null>(null);
+  const [reportId, setReportId] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -25,6 +27,7 @@ export default function Home() {
       const data = await res.json().catch(() => null);
       if (res.ok && data?.digest) {
         setDigest(data.digest);
+        setReportId(data.id);
       } else if (data?.error) {
         setError(data.error);
       } else if (res.status === 429) {
@@ -52,6 +55,7 @@ export default function Home() {
         </p>
       )}
       {digest && <VitalsGrid digest={digest} />}
+      {digest && <FixList key={reportId} digest={digest} id={reportId} />}
     </main>
   );
 }
