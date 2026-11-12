@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Hero } from "@/components/Hero";
 import { GaugeIcon, SearchIcon, WrenchIcon } from "@/components/icons";
 
-const TITLE = "PerfCoach: find out why your page is slow";
+const TITLE = "PerfCoach";
 const DESCRIPTION =
   "Run Google PageSpeed Insights on a URL, see its Core Web Vitals, and get fixes ranked by how much time they could save.";
 
