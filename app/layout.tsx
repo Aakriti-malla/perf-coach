@@ -1,16 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "PerfCoach",
@@ -19,11 +9,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className="h-full antialiased">
+      <body className="min-h-full flex flex-col">
+        <header className="mx-auto w-full max-w-3xl px-6 pt-6">
+          <Link href="/" className="inline-block font-serif text-[38px] leading-none tracking-[-0.5px]">
+            <span className="font-normal text-bark">perf</span>
+            <span className="font-semibold text-saddle">coach</span>
+          </Link>
+        </header>
+        {children}
+      </body>
     </html>
   );
 }

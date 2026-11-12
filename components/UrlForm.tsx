@@ -24,16 +24,16 @@ export function UrlForm({
         name="url"
         required
         placeholder="https://example.com"
-        className="rounded border border-zinc-500 p-2"
+        className="rounded-lg border border-bark-soft bg-paper p-2 text-bark placeholder:text-bark-soft"
       />
       <label htmlFor="strategy">Device</label>
-      <select id="strategy" name="strategy" className="rounded border border-zinc-500 p-2">
+      <select id="strategy" name="strategy" className="rounded-lg border border-bark-soft bg-paper p-2 text-bark">
         <option value="mobile">Mobile</option>
         <option value="desktop">Desktop</option>
       </select>
       <button
         disabled={loading}
-        className="rounded bg-blue-700 p-2 text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+        className="button"
       >
         {loading ? "Auditing…" : "Run audit"}
       </button>

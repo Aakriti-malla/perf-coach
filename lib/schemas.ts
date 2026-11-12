@@ -54,7 +54,8 @@ export const Recommendation = z.object({
 export type Recommendation = z.infer<typeof Recommendation>;
 
 // useObject needs an object at the top level, not a bare array.
-export const Recommendations = z.object({ recommendations: z.array(Recommendation).max(8) });
+export const MAX_RECOMMENDATIONS = 8;
+export const Recommendations = z.object({ recommendations: z.array(Recommendation).max(MAX_RECOMMENDATIONS) });
 export type Recommendations = z.infer<typeof Recommendations>;
 
 // The model's ids and numbers are untrusted: the digest is the source of truth.

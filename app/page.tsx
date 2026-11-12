@@ -1,56 +1,92 @@
-"use client";
+import type { Metadata } from "next";
+import { Hero } from "@/components/Hero";
+import { GaugeIcon, SearchIcon, WrenchIcon } from "@/components/icons";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { UrlForm } from "@/components/UrlForm";
-import type { Strategy } from "@/lib/psi";
+const TITLE = "PerfCoach: find out why your page is slow";
+const DESCRIPTION =
+  "Run Google PageSpeed Insights on a URL, see its Core Web Vitals, and get fixes ranked by how much time they could save.";
+
+export const metadata: Metadata = {
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: { title: TITLE, description: DESCRIPTION, type: "website" },
+};
+
+const FEATURES = [
+  {
+    Icon: GaugeIcon,
+    title: "Real measurements",
+    text: "Lab data from Lighthouse, plus real-user data from Chrome's field dataset where it's available.",
+  },
+  {
+    Icon: WrenchIcon,
+    title: "Ranked fixes",
+    text: "An AI model orders the failing audits by estimated time saved. Every fix is tied to a real failing audit.",
+  },
+  {
+    Icon: SearchIcon,
+    title: "Shareable reports",
+    text: "Each audit gets its own link you can send to a teammate.",
+  },
+];
+
+const STEPS = [
+  "Paste a URL and pick mobile or desktop.",
+  "We run the audit with PageSpeed Insights.",
+  "Open your report and ask for AI-ranked fixes.",
+];
 
 export default function Home() {
-  const router = useRouter();
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function runAudit(url: string, strategy: Strategy) {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/api/audit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, strategy }),
-      });
-      // Platform timeouts and gateway errors come back as HTML, not our JSON.
-      const data = await res.json().catch(() => null);
-      if (res.ok && data?.id) {
-        // Stay in the loading state until the navigation completes.
-        router.push(`/report/${data.id}`);
-        return;
-      }
-      if (data?.error) {
-        setError(data.error);
-      } else if (res.status === 429) {
-        setError("Too many requests. Please wait a bit and try again.");
-      } else {
-        setError("The audit timed out or failed. Please try again.");
-      }
-    } catch {
-      setError("Couldn't reach the server. Check your connection and try again.");
-    }
-    setLoading(false);
-  }
-
   return (
-    <main className="mx-auto w-full max-w-3xl p-6">
-      <h1 className="mb-4 text-2xl font-semibold">PerfCoach</h1>
-      <UrlForm onSubmit={runAudit} loading={loading} />
-      <div role="status" className="mt-4">
-        {loading && "Auditing… this can take up to a minute"}
-      </div>
-      {error && (
-        <p role="alert" className="mt-4 rounded border border-red-300 bg-red-50 p-3 text-red-800">
-          {error}
+    <>
+      <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-20">
+        <Hero />
+
+        <section className="mt-16">
+          <h2 className="text-2xl">What you get</h2>
+          <ul className="mt-4 grid gap-4 md:grid-cols-3">
+            {FEATURES.map(({ Icon, title, text }) => (
+              <li key={title} className="card">
+                <Icon />
+                <h3 className="mt-3 text-xl">{title}</h3>
+                <p className="mt-2 text-sm">{text}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="mt-16">
+          <h2 className="text-2xl">How it works</h2>
+          <ol className="mt-4 list-decimal space-y-2 pl-6 marker:font-semibold marker:text-bark">
+            {STEPS.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+        </section>
+
+        <p className="mt-10 text-sm">
+          Audits are limited to 5 per hour, and AI fixes can pause for the rest of the day when the free daily quota is
+          used.
         </p>
-      )}
-    </main>
+      </main>
+
+      <footer className="mx-auto w-full max-w-3xl border-t border-stone px-6 py-8 text-sm">
+        <p>
+          Built by Aakriti Malla ·{" "}
+          <a href="https://github.com/aakriti-malla" rel="noopener noreferrer" className="text-bark underline underline-offset-2">
+            GitHub
+          </a>{" "}
+          ·{" "}
+          <a
+            href="https://www.linkedin.com/in/aakriti-malla"
+            rel="noopener noreferrer"
+            className="text-bark underline underline-offset-2"
+          >
+            LinkedIn
+          </a>
+        </p>
+        <p className="mt-2">Not affiliated with Google. Audit data comes from the PageSpeed Insights API.</p>
+      </footer>
+    </>
   );
 }

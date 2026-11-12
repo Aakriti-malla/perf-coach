@@ -36,18 +36,18 @@ async function Report({ params }: { params: PageProps<"/report/[id]">["params"] 
     <>
       {digest ? (
         <>
-          <h1 className="text-2xl font-semibold">Performance report</h1>
+          <h1 className="text-3xl">Performance report</h1>
           <VitalsGrid digest={digest} />
           <FixList digest={digest} id={id} initial={recs ?? undefined} />
         </>
       ) : (
         <>
-          <h1 className="text-2xl font-semibold">Report not found</h1>
+          <h1 className="text-3xl">Report not found</h1>
           <p className="mt-2">This report has expired or never existed. Reports are kept for 7 days.</p>
         </>
       )}
       <p className="mt-8">
-        <Link href="/" className="text-blue-700 underline">
+        <Link href="/" className="text-bark underline underline-offset-2">
           {digest ? "Audit another page" : "Run a new audit"}
         </Link>
       </p>
