@@ -2,8 +2,8 @@
 
 Paste a URL, pick mobile or desktop, and get Core Web Vitals plus an AI-ranked list of fixes grounded in the failing Lighthouse audits. Every audit has a shareable link at `/report/[id]`.
 
-- **Live demo:** _link coming soon_
-- **Demo GIF:** _coming soon_
+- **Live:** https://perf-coach.vercel.app/
+- **Demo:** [Video](https://github.com/user-attachments/assets/2a9ccd02-8310-4e29-b8a2-4ac73a2aa362)
 
 ## How it works
 
